@@ -1,0 +1,58 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+
+    # This creates a temporary PostgreSQL database for our tests to use
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kudouser
+          POSTGRES_PASSWORD: kudopass
+          POSTGRES_DB: kudo
+        ports:
+          - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+        cache: true
+
+    - name: Install Dependencies
+      run: go mod download
+
+    # We create a dummy .env file so kudostore.NewClient() doesn't fail
+    # when it calls godotenv.Load("../.env") in the tests.
+    - name: Create Test .env File
+      run: |
+        echo "DB_HOST=localhost" > .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_USER=kudouser" >> .env
+        echo "DB_PASSWORD=kudopass" >> .env
+        echo "DB_NAME=kudo" >> .env
+        echo "DB_SSLMODE=disable" >> .env
+
+    - name: Run Tests
+      # We run tests with the -v flag for verbose output
+      # and -race to detect race conditions
+      run: go test -v -race ./...
