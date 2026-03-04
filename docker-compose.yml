@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=kudouser
+      - DB_PASSWORD=kudopass
+      - DB_NAME=kudo
+      - DB_SSLMODE=disable
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_USER=kudouser
+      - POSTGRES_PASSWORD=kudopass
+      - POSTGRES_DB=kudo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kudouser -d kudo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

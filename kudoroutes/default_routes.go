@@ -10,14 +10,14 @@ import (
 	"net/http"
 )
 
-func UserGET(w http.ResponseWriter, r *http.Request) {
+func DefaultUserGET(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "appplication/json")
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(kudostore.Store)
 }
 
-func UserPOST(w http.ResponseWriter, r *http.Request) {
+func DefaultUserPOST(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Protect against large payloads (1MB limit)
@@ -46,7 +46,7 @@ func UserPOST(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create user
-	user := kudomodels.CreateUser(req.Name, req.Email)
+	user := kudomodels.DefaultCreateUser(req.Name, req.Email)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(user); err != nil {

@@ -1,36 +1,44 @@
 package kudomodels
 
 import (
-	"main/kudostore"
-	"main/kudotypes"
-	"sync"
+	"context"
+	"fmt"
+	"main/ent"
+	"main/ent/user"
 )
 
-var (
-	UserID = uint64(3)
-	mu     sync.Mutex
-)
-
-func nextIdGenerator() {
-	mu.Lock()
-	defer mu.Unlock()
-
-	UserID++
+// EntCreateUser inserts a new user into the database using Ent.
+func CreateUser(ctx context.Context, client *ent.Client, name, email string) (*ent.User, error) {
+	u, err := client.User.
+		Create().
+		SetName(name).
+		SetEmail(email).
+		Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+	return u, nil
 }
 
-func CreateUser(name, email string) kudotypes.User {
-	nextIdGenerator()
-
-	mu.Lock()
-	defer mu.Unlock()
-
-	newUser := kudotypes.User{
-		ID:    UserID,
-		Name:  name,
-		Email: email,
+// EntGetUserByID retrieves a single user by their ID.
+func GetUserByID(ctx context.Context, client *ent.Client, id int) (*ent.User, error) {
+	u, err := client.User.
+		Query().
+		Where(user.ID(id)).
+		Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id %d: %w", id, err)
 	}
+	return u, nil
+}
 
-	kudostore.Store = append(kudostore.Store, newUser)
-
-	return newUser
+// EntGetAllUsers retrieves all users from the database.
+func GetAllUsers(ctx context.Context, client *ent.Client) ([]*ent.User, error) {
+	users, err := client.User.
+		Query().
+		All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get all users: %w", err)
+	}
+	return users, nil
 }
